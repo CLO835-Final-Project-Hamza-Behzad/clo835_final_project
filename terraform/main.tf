@@ -118,10 +118,20 @@ data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
 
+# resource "aws_iam_instance_profile" "lab_instance_profile" {
+#   name = "LabInstanceProfile"
+#   role = data.aws_iam_role.lab_role.name
+# }
 
 data "aws_iam_instance_profile" "existing_profile" {
   name = "LabInstanceProfile"
 }
+
+# since it already create, it needs to be commented to avoid showing existence error
+# import {
+#   to = aws_iam_instance_profile.lab_instance_profile
+#   id = "LabInstanceProfile"
+# }
 
 # EC2 Instance with the created key pair
 resource "aws_instance" "worker_node" {
@@ -132,10 +142,12 @@ resource "aws_instance" "worker_node" {
   security_groups        = [aws_security_group.worker_node_sg.id]
   associate_public_ip_address = true
 
+  iam_instance_profile   = data.aws_iam_instance_profile.existing_profile.name
+
   user_data = <<-EOF
     #!/bin/bash
     sudo yum update -y
-    sudo yum install -y docker git
+    sudo yum install -y docker git unzip
     sudo systemctl start docker
     sudo systemctl enable docker
     sudo usermod -aG docker ec2-user
@@ -146,6 +158,9 @@ resource "aws_instance" "worker_node" {
 
     # Clone GitHub repository (modify with your actual repo)
     git clone https://github.com/CLO835-Final-Project-Hamza-Behzad/clo835_final_project.git /home/ec2-user/app
+
+    # Optional: Unzip if the repo contains a zip file
+    unzip /home/ec2-user/app/project.zip -d /home/ec2-user/app/
 
     # Change ownership
     sudo chown -R ec2-user:ec2-user /home/ec2-user/app
