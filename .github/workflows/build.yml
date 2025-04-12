@@ -93,26 +93,26 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Terraform Plan
         run: terraform plan
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
 
       - name: Capture Terraform Outputs
         id: capture_terraform_outputs
         run: |
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)"
-        # working-directory: ./terraform
-        working-directory: ./tef_test
+        working-directory: ./terraform
+        # working-directory: ./tef_test
         shell: bash
 
   deploy_to_ec2:
