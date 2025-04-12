@@ -107,48 +107,49 @@ jobs:
         id: capture_terraform_outputs
         run: |
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
+          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)"
         working-directory: ./terraform
         shell: bash
 
-  # deploy_to_ec2:
-  #     name: Deploy to EC2 and Run docker-compose
-  #     needs: infrastructure
-  #     runs-on: ubuntu-latest
-  #     environment: staging
-  #     env:
-  #       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-  #       AWS_REGION: us-east-1  # Set the region here
-  #       EC2_KEY: ${{ secrets.EC2_Key }}
-  #       EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
+  deploy_to_ec2:
+      name: Deploy to EC2 and Run docker-compose
+      needs: [infrastructure, build-and-push]
+      runs-on: ubuntu-latest
+      environment: staging
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        AWS_REGION: us-east-1  # Set the region here
+        EC2_KEY: ${{ secrets.EC2_Key }}
+        EC2_PUBLIC_IP: ${{ needs.infrastructure.outputs.ec2_public_ip }}
 
-  #     steps:
-  #       - name: Checkout Repository
-  #         uses: actions/checkout@v3
+      steps:
+        - name: Checkout Repository
+          uses: actions/checkout@v3
 
-  #       - name: Print EC2 Public IP
-  #         run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
+        - name: Print EC2 Public IP
+          run: echo "EC2 Public IP is ${{ env.EC2_PUBLIC_IP }}"
 
-  #       - name: Set up SSH
-  #         run: |
-  #           mkdir -p ~/.ssh
-  #           echo "$EC2_KEY" > ~/.ssh/ec2_key
-  #           chmod 600 ~/.ssh/ec2_key
-  #         env:
-  #           EC2_KEY: ${{ secrets.EC2_Key }}
+        - name: Set up SSH
+          run: |
+            mkdir -p ~/.ssh
+            echo "$EC2_KEY" > ~/.ssh/ec2_key
+            chmod 600 ~/.ssh/ec2_key
+          env:
+            EC2_KEY: ${{ secrets.EC2_Key }}
 
-  #       - name: Wait for EC2 instance to complete setup
-  #         run: |
-  #           echo "Waiting for EC2 instance setup to complete..."
-  #           sleep 180  # Wait for 3 minutes
+        - name: Wait for EC2 instance to complete setup
+          run: |
+            echo "Waiting for EC2 instance setup to complete..."
+            sleep 180  # Wait for 3 minutes
 
-  #       - name: SSH into EC2 and Run docker-compose
-  #         run: |
-  #           ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
-  #             cd /home/ec2-user/app
-  #             aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
-  #             docker-compose down
-  #             docker-compose up -d
-  #           EOF
+        - name: SSH into EC2 and Run docker-compose
+          run: |
+            ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key ec2-user@${{ env.EC2_PUBLIC_IP }} << 'EOF'
+              cd /home/ec2-user/app
+              aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 097656145156.dkr.ecr.us-east-1.amazonaws.com
+              docker-compose down
+              docker-compose up -d
+            EOF
             
