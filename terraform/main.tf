@@ -159,9 +159,6 @@ resource "aws_instance" "worker_node" {
     # Clone GitHub repository (modify with your actual repo)
     git clone https://github.com/CLO835-Final-Project-Hamza-Behzad/clo835_final_project.git /home/ec2-user/app
 
-    # Optional: Unzip if the repo contains a zip file
-    unzip /home/ec2-user/app/project.zip -d /home/ec2-user/app/
-
     # Change ownership
     sudo chown -R ec2-user:ec2-user /home/ec2-user/app
   EOF
