@@ -142,7 +142,7 @@ jobs:
         - name: Wait for EC2 instance to complete setup
           run: |
             echo "Waiting for EC2 instance setup to complete..."
-            sleep 180  # Wait for 3 minutes
+            sleep 120  # Wait for 3 minutes
 
         - name: SSH into EC2 and Run docker-compose
           run: |
@@ -152,4 +152,5 @@ jobs:
               docker-compose down
               docker-compose up -d
             EOF
+            
             
