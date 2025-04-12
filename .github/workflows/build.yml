@@ -138,11 +138,18 @@ jobs:
             chmod 600 ~/.ssh/ec2_key
           env:
             EC2_KEY: ${{ secrets.EC2_Key }}
+        
+        - name: Wait for EC2 instance to be ready
+          uses: truemark/aws-ec2-instance-wait-action@v3
+          with:
+            instance-ids: ${{ steps.launch-ec2.outputs.instance-id }}
+            region: us-east-1
+            timeout-ms: 600000          
 
-        - name: Wait for EC2 instance to complete setup
+        - name: Wait for User data installed in the EC2
           run: |
             echo "Waiting for EC2 instance setup to complete..."
-            sleep 120  # Wait for 3 minutes
+            sleep 60  # Wait for 3 minutes
 
         - name: SSH into EC2 and Run docker-compose
           run: |
@@ -152,5 +159,4 @@ jobs:
               docker-compose down
               docker-compose up -d
             EOF
-            
             

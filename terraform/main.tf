@@ -156,8 +156,12 @@ resource "aws_instance" "worker_node" {
     sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
 
-    # Clone GitHub repository (modify with your actual repo)
-    git clone https://github.com/CLO835-Final-Project-Hamza-Behzad/clo835_final_project.git /home/ec2-user/app
+    # # Clone GitHub repository (modify with your actual repo)
+    # git clone https://github.com/CLO835-Final-Project-Hamza-Behzad/clo835_final_project.git /home/ec2-user/app
+
+    # Clone prod branch
+    git clone --branch prod --single-branch https://github.com/CLO835-Final-Project-Hamza-Behzad/clo835_final_project.git /home/ec2-user/app
+
 
     # Change ownership
     sudo chown -R ec2-user:ec2-user /home/ec2-user/app
