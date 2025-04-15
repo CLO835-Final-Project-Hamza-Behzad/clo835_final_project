@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 from pymysql import connections
 import os
 import random
 import argparse
+import boto3
+from io import BytesIO
+from flask import send_file
 
 
 app = Flask(__name__)
@@ -44,14 +47,42 @@ SUPPORTED_COLORS = ",".join(color_codes.keys())
 # Generate a random color
 COLOR = random.choice(["red", "green", "blue", "blue2", "darkblue", "pink", "lime"])
 
+def get_background_image_url():
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+        aws_session_token=os.environ.get('AWS_SESSION_TOKEN')
+    )
+
+    bucket = os.environ.get('S3_BUCKET')
+    key = os.environ.get('BACKGROUND_IMAGE_NAME')
+
+    print(f"Bucket: {bucket}, Key: {key}")  # Debugging line
+
+    if not bucket or not key:
+        print("S3_BUCKET or BACKGROUND_IMAGE_NAME not set")
+        return None
+
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket, 'Key': key},
+            ExpiresIn=3600
+        )
+        return url
+    except Exception as e:
+        print(f"Error generating presigned URL: {e}")
+        return None
+
 
 @app.route("/", methods=['GET', 'POST'])
 def home():
-    return render_template('addemp.html', color=color_codes[COLOR])
+    return render_template('addemp.html', BACKGROUND_IMAGE=get_background_image_url())
 
 @app.route("/about", methods=['GET','POST'])
 def about():
-    return render_template('about.html', color=color_codes[COLOR])
+    return render_template('about.html', BACKGROUND_IMAGE=get_background_image_url())
     
 @app.route("/addemp", methods=['POST'])
 def AddEmp():
@@ -75,11 +106,11 @@ def AddEmp():
         cursor.close()
 
     print("all modification done...")
-    return render_template('addempoutput.html', name=emp_name, color=color_codes[COLOR])
+    return render_template('addempoutput.html', name=emp_name, color=color_codes[COLOR], BACKGROUND_IMAGE=get_background_image_url())
 
 @app.route("/getemp", methods=['GET', 'POST'])
 def GetEmp():
-    return render_template("getemp.html", color=color_codes[COLOR])
+    return render_template("getemp.html", BACKGROUND_IMAGE=get_background_image_url())
 
 
 @app.route("/fetchdata", methods=['GET','POST'])
@@ -108,7 +139,7 @@ def FetchData():
         cursor.close()
 
     return render_template("getempoutput.html", id=output["emp_id"], fname=output["first_name"],
-                           lname=output["last_name"], interest=output["primary_skills"], location=output["location"], color=color_codes[COLOR])
+                           lname=output["last_name"], interest=output["primary_skills"], location=output["location"], BACKGROUND_IMAGE=get_background_image_url())
 
 if __name__ == '__main__':
     

@@ -2,16 +2,23 @@
 <html>
 <head>
 	<title>Add Employee Information</title>
+	<style>
+		body {
+			background-image: url('{{ BACKGROUND_IMAGE }}');
+			background-size: cover;
+			background-repeat: no-repeat;
+			background-attachment: fixed;
+		}
+	</style>
 </head>
 <center>
 	<font color="black" size="4" style="font-family: avenir">
 
 		<h1 style="color: DodgerBlue">Employee Database</h1>
-		<body style="background: {{ color }};" >
+		
+		<body >
 
 			<form action="/addemp" autocomplete="on" method = "POST" enctype="multipart/form-data">
-
-			
 
 		  		Employee ID:<br> <input style="height:25px;font-size:14pt; color:grey;" type="number" name="emp_id" autofocus size="40"><br><br>
 
@@ -30,7 +37,6 @@
 			<br><br><br><br><br><br><br><br>
             <a href="/about">About Us</a>
 		</body>
-
 	</font>
 </center>
 </html>

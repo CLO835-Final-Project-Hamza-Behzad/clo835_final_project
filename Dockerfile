@@ -1,9 +1,14 @@
 FROM ubuntu:20.04
-RUN apt-get update -y && \
-    apt-get install -y python3-pip mysql-client && \
-    pip install --upgrade pip
+RUN apt-get update -y
 COPY . /app
 WORKDIR /app
+
+RUN mkdir -p uploads
+RUN apt-get update -y \
+    && apt-get install -y python3-pip \
+    && apt-get install -y mysql-client 
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
-EXPOSE 8080
-CMD ["python3", "app.py"]
+EXPOSE 81
+ENTRYPOINT [ "python3" ]
+CMD [ "app.py" ]

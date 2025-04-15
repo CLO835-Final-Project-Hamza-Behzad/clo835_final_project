@@ -1,0 +1,34 @@
+export AWS_ACCESS_KEY_ID=<your-access-key-id>
+export AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
+export AWS_SESSION_TOKEN=<your-session-token>  # Optional if using temporary credentials
+export S3_BUCKET=<your-bucket-name>
+export BACKGROUND_IMAGE_NAME=<your-image-name>
+
+docker build -t my-app .
+docker build -t my-mysql -f Dockerfile_mysql .
+docker run --name mysql-container -d -e MYSQL_ROOT_PASSWORD=rootpassword -e MYSQL_DATABASE=employees my-mysql
+#wait 10 seconds or more
+docker run --name app-container -d -p 81:8080 --link mysql-container:mysql \
+-e DBHOST=mysql \
+-e DBUSER=<db-user> \
+-e DBPWD=<db-password> \
+-e DATABASE=<database-name> \
+-e S3_BUCKET=<bucket-name> \
+-e BACKGROUND_IMAGE_NAME=<image-key> \
+-e AWS_ACCESS_KEY_ID=<access-key-id> \
+-e AWS_SECRET_ACCESS_KEY=<secret-access-key> \
+-e AWS_SESSION_TOKEN=<session-token> \
+my-app
+
+
+-e S3_BUCKET=<your-bucket-name> \
+-e BACKGROUND_IMAGE_NAME=<your-image-name> \
+-e AWS_ACCESS_KEY_ID=<your-access-key-id> \
+-e AWS_SECRET_ACCESS_KEY=<your-secret-access-key> \
+
+Test database connectivity:
+docker exec -it app-container bash
+
+#To stop it
+docker stop mysql-container
+docker stop my-app

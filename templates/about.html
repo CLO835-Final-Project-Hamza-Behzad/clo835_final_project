@@ -1,6 +1,17 @@
 <!doctype html>
-<title>Hello from Flask</title>
-<body style="background: {{ color }};"></body>
+<html>
+<head>
+	<title>About</title>
+	<style>
+		body {
+			background-image: url('{{ BACKGROUND_IMAGE }}');
+			background-size: cover;
+			background-repeat: no-repeat;
+			background-attachment: fixed;
+		}
+	</style>
+</head>
+<body></body>
 <div style="color: #e4e4e4;
     text-align:  center;
     height: 90px;
@@ -18,3 +29,4 @@
   {% endif %}
 
 </div>
+</html>
