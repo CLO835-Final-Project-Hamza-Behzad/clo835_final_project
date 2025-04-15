@@ -4,19 +4,51 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build-and-push:
+  BuildImages:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
             
-      - name: Setup AWS CLI
+      - name: Build Images
+        run: |
+          echo "Building webapp image"
+          docker build -t webapp-image -f Dockerfile .
+          echo "Building mysql image"
+          docker build -t mysql-image -f Dockerfile_mysql .
+
+      - name: Save Images as Artifacts
+        run: |
+          echo "Saving webapp image"
+          docker save -o webapp-image.tar webapp-image:latest
+          echo "Saving mysql image"
+          docker save -o mysql-image.tar mysql-image:latest
+
+      - name: Upload Image Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: |
+            webapp-image.tar
+            mysql-image.tar
+          retention-days: 1
+
+  PushToECR:
+    runs-on: ubuntu-latest
+    needs: BuildImages
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
         
       - name: Test AWS Credentials
@@ -24,35 +56,37 @@ jobs:
           echo "Running AWS sts get-caller-identity"
           aws sts get-caller-identity 
           
-      - name: Login to Amazon ECR
+      - name: Log in to ECR
         run: |
           echo "Logging in to ECR"
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com || exit 1
 
-      - name: Check if ECR Repositories Exist and Create If Needed
+      - name: Ensure ECR Repositories
         run: |
           echo "Checking if repositories exist"
-          
-          # Check for web app repo existence
-          aws ecr describe-repositories --repository-names my-web-app-repo --region ${{ secrets.AWS_REGION }} || aws ecr create-repository --repository-name my-web-app-repo --region ${{ secrets.AWS_REGION }}
-          
-          # Check for MySQL repo existence
+          aws ecr describe-repositories --repository-names clo835-app --region ${{ secrets.AWS_REGION }} || aws ecr create-repository --repository-name clo835-app --region ${{ secrets.AWS_REGION }}
           aws ecr describe-repositories --repository-names mysql-repo --region ${{ secrets.AWS_REGION }} || aws ecr create-repository --repository-name mysql-repo --region ${{ secrets.AWS_REGION }}
-        
-      - name: Build Docker Images
-        run: |
-          echo "Building webapp image"
-          docker build -t webapp-image -f Dockerfile .
-          echo "Building mysql image"
-          docker build -t mysql-image -f Dockerfile_mysql .
 
-      - name: Tag and Push to Amazon ECR
+      - name: Download Image Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: .
+
+      - name: Load Images
+        run: |
+          echo "Loading webapp image"
+          docker load -i webapp-image.tar
+          echo "Loading mysql image"
+          docker load -i mysql-image.tar
+
+      - name: Tag and Push Images
         run: |
           echo "Tagging webapp image"
-          docker tag webapp-image:latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-web-app-repo:latest
+          docker tag webapp-image:latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/clo835-app:latest
           echo "Tagging mysql image"
           docker tag mysql-image:latest ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/mysql-repo:latest
           echo "Pushing webapp image to ECR"
-          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-web-app-repo:latest
+          docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/clo835-app:latest
           echo "Pushing mysql image to ECR"
           docker push ${{ secrets.ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/mysql-repo:latest
